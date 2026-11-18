@@ -1,0 +1,209 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>扶養チェック</title>
+<style>
+/* Layout: one column, a result card under the inputs; calm, numbers first. */
+:root {
+  --bg: #f4f7fb;
+  --fg: #0b2545;
+  --card: #ffffff;
+  --muted: #4b6584;
+  --line: #d6e2f0;
+  --accent: #ff6b5e;
+  --ok: #1d7a50;
+  --warn: #9a6412;
+  --ng: #b42318;
+  --soft: #e8f0fa;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b2545;
+    --fg: #dceeff;
+    --card: #143662;
+    --muted: #8fc9f5;
+    --line: #24497a;
+    --accent: #ff6b5e;
+    --ok: #6fd3a1;
+    --warn: #f5c26b;
+    --ng: #ff8a80;
+    --soft: #0f2d54;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b2545;
+  --fg: #dceeff;
+  --card: #143662;
+  --muted: #8fc9f5;
+  --line: #24497a;
+  --accent: #ff6b5e;
+  --ok: #6fd3a1;
+  --warn: #f5c26b;
+  --ng: #ff8a80;
+  --soft: #0f2d54;
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.6 "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px;
+}
+main { max-width: 560px; margin: 0 auto; display: grid; gap: 16px; }
+h1 { font-size: 24px; margin: 0; line-height: 1.3; text-wrap: balance; }
+.lead { color: var(--muted); margin: 0; font-size: 14px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: grid; gap: 14px; }
+label { display: grid; gap: 6px; font-size: 14px; color: var(--muted); }
+input[type="number"] {
+  font: inherit; font-size: 18px; color: var(--fg); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%;
+  box-sizing: border-box; font-variant-numeric: tabular-nums;
+}
+input[type="number"]:focus-visible, input[type="checkbox"]:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.check { display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--fg); }
+.check input { width: 20px; height: 20px; accent-color: var(--accent); }
+.hint { font-size: 13px; color: var(--muted); margin: 0; }
+.row { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; padding: 12px 0; border-top: 1px solid var(--line); }
+.row:first-of-type { border-top: 0; padding-top: 0; }
+.mark { font-weight: 700; font-size: 18px; line-height: 1.4; text-align: center; }
+.ok .mark { color: var(--ok); }
+.warn .mark { color: var(--warn); }
+.ng .mark { color: var(--ng); }
+.neutral .mark { color: var(--muted); }
+.row-title { font-weight: 700; margin: 0; }
+.row-text { margin: 2px 0 0; font-size: 14px; color: var(--muted); }
+.empty { color: var(--muted); font-size: 15px; margin: 0; }
+.base { font-size: 13px; color: var(--muted); margin: 0; }
+.base code { font-family: inherit; font-variant-numeric: tabular-nums; color: var(--fg); }
+a { color: var(--accent); }
+.foot { font-size: 12px; color: var(--muted); margin: 0; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>扶養チェック</h1>
+    <p class="lead">給料だけの場合の目安を調べます。2026年（令和8年分）の国税庁の基準です。</p>
+  </header>
+
+  <section class="card" aria-label="入力">
+    <label>
+      年齢（12月31日時点）
+      <input id="age" type="number" inputmode="numeric" min="0" max="99" placeholder="例：20">
+    </label>
+    <label>
+      給与収入の年間見込み（万円）
+      <input id="pay" type="number" inputmode="decimal" min="0" step="1" placeholder="例：120">
+      <span class="hint">手取りではなく、税引き前の年収（給与明細の「支給額」の合計）で入れてね。</span>
+    </label>
+    <label class="check">
+      <input id="student" type="checkbox">
+      大学などの学生です
+    </label>
+    <p class="hint">給与以外の収入（副業、掛け持ちの別の会社など）がある場合は、この結果では判定できません。</p>
+  </section>
+
+  <section class="card" aria-live="polite" aria-label="結果">
+    <p id="empty" class="empty">年齢と給与収入を入れると、結果が出ます。</p>
+    <div id="results" hidden></div>
+  </section>
+
+  <section class="card">
+    <p class="base">
+      基準（給与収入のみの場合）：親の扶養 <code>136万円以下</code>、特定親族 <code>136万円超 197万円以下</code>、勤労学生 <code>163万円以下</code>。
+    </p>
+    <p class="base">
+      住民税の基準と、親の健康保険の扶養の基準は、ここでは判定していません。住んでいる市区町村・加入先の健康保険で確認してください。
+    </p>
+    <p class="foot">
+      出典：<a href="https://www.nta.go.jp/publication/pamph/gensen/2026kaisei.pdf" target="_blank" rel="noopener">国税庁「令和8年分の扶養等の判定」</a>。目安であり、最終的な判断は国税庁や市区町村の公式ページで確認してください。
+    </p>
+  </section>
+</main>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var ageEl = $('age'), payEl = $('pay'), studentEl = $('student');
+  var empty = $('empty'), results = $('results');
+
+  function judge(age, pay, student) {
+    var rows = [];
+
+    // 親の扶養（所得税）
+    if (pay <= 136) {
+      var t = '親の扶養に入れる目安です（所得税）。';
+      var cls = 'ok', mark = '○';
+      if (age < 16) { t = '16歳未満は、扶養控除の対象になりません。'; cls = 'warn'; mark = '△'; }
+      rows.push({ cls: cls, mark: mark, title: '親の扶養（所得税）', text: t });
+    } else if (pay <= 197 && age >= 19 && age <= 22) {
+      rows.push({ cls: 'warn', mark: '△', title: '親の扶養（所得税）', text: '特定親族にあたります。親の控除は、段階的に減る仕組みです。' });
+    } else {
+      rows.push({ cls: 'ng', mark: '×', title: '親の扶養（所得税）', text: '扶養から外れる目安です。親の控除の対象になりにくくなります。' });
+    }
+
+    // 勤労学生控除（本人）
+    if (!student) {
+      rows.push({ cls: 'neutral', mark: '–', title: '勤労学生控除（本人の所得税）', text: '学生でない場合は対象外です。' });
+    } else if (pay <= 163) {
+      rows.push({ cls: 'ok', mark: '○', title: '勤労学生控除（本人の所得税）', text: '対象の可能性があります（所得税27万円の控除）。年末調整か確定申告で申告が必要です。' });
+    } else {
+      rows.push({ cls: 'ng', mark: '×', title: '勤労学生控除（本人の所得税）', text: '給与収入が163万円を超えるため、対象外の目安です。' });
+    }
+
+    return rows;
+  }
+
+  function render() {
+    var age = parseFloat(ageEl.value);
+    var pay = parseFloat(payEl.value);
+    if (isNaN(age) || isNaN(pay) || age < 0 || pay < 0) {
+      empty.hidden = false;
+      results.hidden = true;
+      return;
+    }
+    var rows = judge(age, pay, studentEl.checked);
+    results.innerHTML = '';
+    rows.forEach(function (r) {
+      var div = document.createElement('div');
+      div.className = 'row ' + r.cls;
+      var m = document.createElement('div');
+      m.className = 'mark';
+      m.setAttribute('aria-hidden', 'true');
+      m.textContent = r.mark;
+      var body = document.createElement('div');
+      var h = document.createElement('p');
+      h.className = 'row-title';
+      h.textContent = r.title;
+      var p = document.createElement('p');
+      p.className = 'row-text';
+      p.textContent = r.text;
+      body.appendChild(h);
+      body.appendChild(p);
+      div.appendChild(m);
+      div.appendChild(body);
+      results.appendChild(div);
+    });
+    empty.hidden = true;
+    results.hidden = false;
+  }
+
+  [ageEl, payEl, studentEl].forEach(function (el) {
+    el.addEventListener('input', render);
+    el.addEventListener('change', render);
+  });
+  render();
+})();
+</script>
+</body>
+</html>
+
+</body></html>
